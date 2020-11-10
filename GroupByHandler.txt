@@ -1,0 +1,307 @@
+import json
+from moz_sql_parser import parse
+import ast
+import re
+query='''SELECT
+A.ACCOUNT_ID,TRIM(A.ACCT_TYPE_CD) AS ACCOUNT_TYPE_CD,
+COALESCE(A.SRC_ACCOUNT_NO , '') AS ACCOUNT_NUMBER,
+CURRENT_DATE  START_DT
+FROM TD_BIM_FR_TRNG_DB.IDEA_ACCOUNT 
+GROUP BY 1,2,3,4 ;'''
+query1='''SELECT COUNT(1) FROM 
+     (SELECT ACP.ACCOUNT_ID,  ACCOUNT_TYPE_CD,ACCT_PROD_START_DTTM,PRODUCT_ID FROM TD_BIM_FR_TRNG_DB.IDEA_T_TGT_ACCOUNT ACC
+                JOIN    TD_BIM_FR_TRNG_DB.IDEA_T_TGT_ACCOUNT_PRODUCT ACP
+             ON ACC.ACCOUNT_ID = ACP.ACCOUNT_ID
+             AND CAST(ACP.ACCT_PROD_START_DTTM AS DATE ) BETWEEN ACC.ACCOUNT_OPEN_DTTM  AND ACC.ACCOUNT_CLOSE_DTTM 
+       GROUP BY 1,2,3,4
+       ) DT
+INNER JOIN  TD_BIM_FR_TRNG_DB.IDEA_T_TGT_ACCOUNT_PARTY AP  
+ON  DT.ACCOUNT_ID = AP.ACCOUNT_ID
+AND CAST(DT.ACCT_PROD_START_DTTM AS DATE ) BETWEEN AP.ACCOUNT_PARTY_START_DT   AND AP.ACCOUNT_PARTY_END_DT    
+
+WHERE NOT EXISTS 
+        (SELECT A,B,C FROM TD_BIM_FR_TRNG_DB.IDEA_T_TGT_PRODUCT PR
+               WHERE DT.PRODUCT_ID = PR.PRODUCT_ID  
+               AND  CAST(PRODUCT_END_DT AS DATE )=  '1900-01-01'
+        )
+AND AP.PARTY_ID IN (SELECT PARTY_ID FROM TD_BIM_FR_TRNG_DB.IDEA_T_TGT_PARTY  P
+                         WHERE P.PARTY_END_DT > CURRENT_DATE GROUP BY 1 );'''
+query2='''SELECT Execution_Dt,COUNT(*) FROM 
+(SELECT ACCOUNT_ID ,Execution_Dt, SUM(LOAN_AMT) as Accumulated_Loan_Amt  from 
+         (SELECT Lon. Account_Id , Lon.Loan_Amt, Execution_Dt from TD_BIM_FR_TRNG_DB.IDEA_T_TGT_LOAN_TERM_ACCT Lon 
+                  cross join (SELECT Current_Date As Execution_Dt from (SELECT 1 a ) Temp ) Temp_1
+              where Loan_Amt > 0 and account_id in (SELECT account_Id from  TD_BIM_FR_TRNG_DB.IDEA_T_TGT_GL_BALANCE )   )Dt
+group by 1,Execution_Dt ) DT
+
+RIGHT OUTER JOIN 
+(select account_id , sum(case when trans_type_cd ='d' then -1*opening_bal_amt else opening_bal_amt end) as agg_opening_bal_amt
+,sum(case when trans_type_cd ='d' then -1*closing_bal_amt else closing_bal_amt end) as agg_closing_bal_amt
+,max(opening_bal_amt) max_opening_bal_amt
+,avg(closing_bal_amt) as  avg_closing_bal_amt
+,min(opening_bal_amt) as min_opening_bal_amt
+
+from td_bim_fr_trng_db.idea_t_tgt_account_tran 
+group by 1 having max(opening_bal_amt) > avg(closing_bal_amt)
+and min_opening_bal_amt < avg_closing_bal_amt
+) DT_1
+ON DT.ACCOUNT_ID =DT_1.ACCOUNT_ID
+
+INNER JOIN TD_BIM_FR_TRNG_DB.IDEA_T_TGT_GL_BALANCE GL
+ON DT_1.ACCOUNT_ID = GL.ACCOUNT_ID 
+
+group by 1;'''
+query3='''select Src_Char_Type_Cd,Src_ColumnType_Cd from migration.idea_src_tgt_data_type_map group by 1,Src_ColumnType_Cd;'''
+query4='''INSERT INTO TD_BIM_FR_TRNG_DB.IDEA_T_SEM_ACT_PRD_PRTY_DENORM
+(Account_Id                    
+,Src_Account_No                
+,Account_Source_Cd             
+,Account_Current_Status_Type_Cd
+,Disposition_Cd                
+,Account_Bal_Amt               
+,Account_Open_Dttm             
+,Account_Close_Dttm            
+,Account_Name                  
+,Account_Desc_Txt              
+,PRODUCT_ID                    
+,ACCT_PROD_START_DTTM          
+,ACCT_PROD_END_DTTM            
+,PARENT_PRODUCT_ID             
+,PRODUCT_TYPE_CD               
+,PRODUCT_DESC                  
+,PRODUCT_NAME                  
+,HOST_PROD_ID                  
+,PRODUCT_START_DT              
+,PRODUCT_END_DT                
+,FIN_PRODUCT_ID                
+,PRODCT_TEXT                   
+,PARTY_ID                      
+,ACCOUNT_TYPE_CD               
+,ACCOUNT_PARTY_START_DT        
+,ACCOUNT_PARTY_END_DT          
+,PARTY_TYPE_CD                 
+,CUST_NO                       
+,CUST_BIRTH_DT                 
+,CUST_GNDR                     
+,PARTY_START_DT                
+,PARTY_END_DT                  
+,LOAN_TERM_TYPE_CD             
+,LOAN_ID                       
+,LOAN_ISSUE_DT                 
+,LOAN_AMT                      
+,LOAN_DURATION                 
+,LOAN_STATUS                   
+,LOAN_PAYMENT_COMPLETED        
+,INTRST_PMT_FREQ_CD            
+,LOAN_CLOSE_DT                 
+,ACCT_TRANS_REF_NO             
+,ACCT_TRANS_DT                 
+,OPENING_BAL_AMT               
+,CLOSING_BAL_AMT               
+,TRANS_TYPE_CD                 
+,TRANS_CATEG_CD                
+,TO_BANK_CD                    
+,TO_ACCOUNT_NO                 
+,Total_Amt                     
+,Remaining_Amt                 
+,Monthly_EMI_AMT               
+,Account_Gl_Bal_Amt            
+)
+SELECT 
+ACC.Account_Id                    
+,ACC.Src_Account_No                
+,CONCAT('Data Sourced From  : ' , ACC.Account_Source_Cd) As Account_Source_Cd        
+,ACC.Account_Current_Status_Type_Cd
+,ACC.Disposition_Cd                
+,ACC.Account_Bal_Amt               
+,ACC.Account_Open_Dttm             
+,ACC.Account_Close_Dttm            
+,ACC.Account_Name                  
+,ACC.Account_Desc_Txt              
+,ACP.PRODUCT_ID                    
+,ACP.ACCT_PROD_START_DTTM          
+,ACP.ACCT_PROD_END_DTTM            
+,PR.PARENT_PRODUCT_ID             
+,PR.PRODUCT_TYPE_CD               
+,PR.PRODUCT_DESC                  
+,PR.PRODUCT_NAME                  
+,PR.HOST_PROD_ID                  
+,PR.PRODUCT_START_DT              
+,PR.PRODUCT_END_DT                
+,PR.FIN_PRODUCT_ID                
+,PR.PRODCT_TEXT                   
+,AP.PARTY_ID                      
+,AP.ACCOUNT_TYPE_CD               
+,AP.ACCOUNT_PARTY_START_DT        
+,AP.ACCOUNT_PARTY_END_DT          
+,P.PARTY_TYPE_CD                 
+,P.CUST_NO                       
+,P.CUST_BIRTH_DT                 
+,P.CUST_GNDR                     
+,P.PARTY_START_DT                
+,P.PARTY_END_DT                  
+,LA.LOAN_TERM_TYPE_CD             
+,LA.LOAN_ID                       
+,LA.LOAN_ISSUE_DT                 
+,LA.LOAN_AMT                      
+,LA.LOAN_DURATION                 
+,LA.LOAN_STATUS                   
+,LA.LOAN_PAYMENT_COMPLETED        
+,LA.INTRST_PMT_FREQ_CD            
+,LA.LOAN_CLOSE_DT                 
+,ATR.ACCT_TRANS_REF_NO             
+,ATR.ACCT_TRANS_DT                 
+,ATR.OPENING_BAL_AMT               
+,ATR.CLOSING_BAL_AMT               
+,ATR.TRANS_TYPE_CD                 
+,ATR.TRANS_CATEG_CD                
+,ATR.TO_BANK_CD                    
+,ATR.TO_ACCOUNT_NO                 
+,LA.LOAN_AMT + case when trans_type_cd ='d' then -1*opening_bal_amt else opening_bal_amt end + 
+    case when trans_type_cd ='d' then -1*closing_bal_amt else closing_bal_amt end   As Total_Amt
+,opening_bal_amt - LOAN_AMT  As Remaining_Amt
+,LOAN_AMT/12  As Monthly_EMI_AMT
+,Account_Gl_Bal_Amt
+
+FROM TD_BIM_FR_TRNG_DB.IDEA_T_TGT_ACCOUNT ACC
+
+ JOIN    TD_BIM_FR_TRNG_DB.IDEA_T_TGT_ACCOUNT_PRODUCT ACP
+ON ACC.ACCOUNT_ID = ACP.ACCOUNT_ID
+AND CAST(ACP.ACCT_PROD_START_DTTM AS DATE ) BETWEEN ACC.ACCOUNT_OPEN_DTTM  AND ACC.ACCOUNT_CLOSE_DTTM 
+
+INNER JOIN   TD_BIM_FR_TRNG_DB.IDEA_T_TGT_PRODUCT PR
+ON ACP.PRODUCT_ID = PR.PRODUCT_ID
+AND CAST(ACP.ACCT_PROD_START_DTTM AS DATE ) BETWEEN PR.PRODUCT_START_DT   AND PR.PRODUCT_END_DT               
+
+INNER  JOIN TD_BIM_FR_TRNG_DB.IDEA_T_TGT_ACCOUNT_PARTY AP
+ON ACC.ACCOUNT_ID = AP.ACCOUNT_ID
+and AP.ACCOUNT_PARTY_END_DT =  '9999-12-31'
+
+INNER JOIN TD_BIM_FR_TRNG_DB.IDEA_T_TGT_PARTY  P
+ON AP.PARTY_ID = P.PARTY_ID
+AND P.PARTY_END_DT > CURRENT_DATE
+
+LEFT JOIN TD_BIM_FR_TRNG_DB.IDEA_T_TGT_LOAN_TERM_ACCT LA
+ON ACC.ACCOUNT_ID = LA.ACCOUNT_ID
+
+LEFT JOIN TD_BIM_FR_TRNG_DB.IDEA_T_TGT_ACCOUNT_TRAN ATR
+ON LA.ACCOUNT_ID = ATR.ACCOUNT_ID
+
+inner join ( select account_Id , account_Gl_Bal_dt , account_gl_pst_type_cd, sum(account_gl_balance_amt) As Account_Gl_Bal_Amt
+from TD_BIM_FR_TRNG_DB.IDEA_T_TGT_GL_BALANCE group by  1 , 2 , 3 ) GL
+on atr.account_id = gl.account_id
+AND ATR.ACCT_TRANS_DT = GL.account_Gl_Bal_dt
+
+LEFT OUTER JOIN TD_BIM_FR_TRNG_DB.IDEA_T_TGT_ACCOUNT_PRODUCT ACP_1
+ON ACC.ACCOUNT_ID = ACP_1.ACCOUNT_ID
+AND CAST(ACP_1.ACCT_PROD_END_DTTM AS DATE) =  '9999-12-31'
+
+WHERE EXISTS 
+(SELECT p_1.PARTY_ID FROM TD_BIM_FR_TRNG_DB.IDEA_T_TGT_PARTY  p_1
+                 
+                 LEFT JOIN TD_BIM_FR_TRNG_DB.IDEA_T_TGT_ACCOUNT_PARTY AP_1
+                 ON P_1.PARTY_ID = AP_1.PARTY_ID
+                 
+                WHERE P.PARTY_ID = P_1.PARTY_iD AND P_1.PARTY_TYPE_CD LIKE 'Individual%'
+                AND AP_1.ACCOUNT_PARTY_END_DT =  '9999-12-31'
+                
+                GROUP BY 1 ) 
+;
+'''
+groupByList={}
+
+count=0
+
+def convertGroupListToSelectList(selectedList,groupList):   
+    for i in groupList:
+        if not str(i).isdigit() and not i in selectedList:
+            selectedList.append(i)
+    return selectedList
+def find(key, dictionary):
+    global count
+    if(type(dictionary) is dict):
+        for k, v in dictionary.items():
+            #print(k,v)
+            selectListCol=[]
+            grpListVal=[]
+            count+=1
+            if isinstance(v,dict) and "select" in v and "groupby" in v:
+                if isinstance(v['select'],dict):
+                    selectListCol.append(v['select']['value'])
+                else:
+                    for selectList in v['select']:
+                        #print(count,selectList['value'])
+                        if not isinstance(selectList['value'], dict):
+                            selectListCol.append(selectList['value'])
+                       
+                if isinstance(v['groupby'],dict):
+                    grpListVal.append(v['groupby']['value'])
+                else:
+                    for grpList in v['groupby']:
+                        #print(count,grpList['value'])
+                        if isinstance(grpList,dict):
+                            grpListVal.append(grpList['value'])
+                        else:
+                            grpListVal.append(grpList)
+                selectListCol=convertGroupListToSelectList(selectListCol,grpListVal)
+                groupByList["SELECT"+str(count)]=selectListCol
+                groupByList["GROUPBY"+str(count)]=grpListVal
+            if isinstance(v,list):
+                for li in v:
+                    if isinstance(li,dict) and "select" in li and 'groupby' in li:
+                        selectListCol.append(li['select']['value'])
+                        grpListVal.append(li['groupby']['value'])
+                        groupByList["SELECT"+str(count)]=selectListCol
+                        groupByList["GROUPBY"+str(count)]=grpListVal
+            if k == key:
+                yield v
+            elif isinstance(v, dict):
+                for result in find(key, v):
+                    yield result
+            elif isinstance(v, list):
+                for d in v:
+                    for result in find(key, d):
+                        yield result
+
+def groupByConversion(query):     
+    finalSelectedList=[]
+    finalGroubyList=[]           
+    if query.upper().startswith("INSERT INTO"):
+        partitions = query.partition("SELECT")
+        updatedQuery = partitions[1] + partitions[2]
+    else:
+        updatedQuery=query
+    va1 = json.dumps(parse(updatedQuery))
+    v2 = ast.literal_eval(va1)
+            
+    list(find('select', v2))
+    if v2.keys() >= {"select", "groupby"}:
+        if "select" and "groupby" in v2:
+            if isinstance(v2["select"], list):
+                for i in v2["select"]:
+                    #print(i)
+                    col=''
+                    if 'name' in i:
+                        col=i['name']
+                        finalSelectedList.append(col)
+                    elif isinstance(i,str):
+                        finalSelectedList.append(col) 
+                    elif not isinstance(i['value'], dict):
+                        col=i['value']
+                        finalSelectedList.append(col) 
+            else:
+                finalSelectedList.append(v2["select"]['value'])
+            if isinstance(v2["groupby"], list):
+                for i in v2['groupby']:
+                    #print(i['value'])
+                    finalGroubyList.append(i['value'])
+            else:
+                finalGroubyList.append(v2["groupby"]['value'])
+        finalSelectedList=convertGroupListToSelectList(finalSelectedList,finalGroubyList)
+        groupByList["SELECTFINAL"]=finalSelectedList
+        groupByList["GROUPFINAL"]=finalGroubyList
+    for x in groupByList.keys():
+        if x.startswith("SELECT"):
+            query=re.sub('\s*GROUP BY\s+(\w+)(?:\s*,\s*(\w+))*', r" GROUP "+x+" BY "+','.join(groupByList[x]), query.upper(),1)
+    return re.sub(r'(?<=GROUP\b).*(?=\bBY)',' ',query)
+
+print(groupByConversion(query4))
