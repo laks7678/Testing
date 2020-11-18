@@ -1,0 +1,118 @@
+#===============================================================================
+# Title            : bteq_idea_t_sem_gl_balance_fact.btq
+# Description      : Script populates IDEA_T_SEM_GL_BALANCE_FACT table
+# Source Tables    : IDEA Target tables
+# Target Table     : IDEA_T_SEM_GL_BALANCE_FACT
+# Key Columns      : ACCOUNT_ID 
+#========================================================================================================
+
+bteq <<EOF
+
+.SET WIDTH 150;
+
+.run file td_logon.txt;
+
+.IF ERRORCODE <> 0 THEN .QUIT ERRORCODE
+
+
+.IF ERRORCODE <> 0 THEN .QUIT ERRORCODE
+
+.SET QUERY_BAND = 'bteq_idea_t_sem_gl_balance_fact.btq;' FOR SESSION   ;
+
+.IF ERRORCODE <> 0 THEN .QUIT ERRORCODE
+
+
+/**********************  TRUNCATE EXISTING DATA AND LOAD **********************/
+
+DELETE TD_BIM_FR_TRNG_DB.IDEA_T_SEM_GL_BALANCE_FACT;
+
+/*************************************************************************************************
+                                      INSERT DATA TO SEMANTIC TABLE
+*************************************************************************************************/
+
+INS INTO TD_BIM_FR_TRNG_DB.IDEA_T_SEM_GL_BALANCE_FACT
+
+SELECT GL_TRN.ACCOUNT_ID, 
+GL_TRN.ACCOUNT_GL_BAL_DT ,
+SUM(GL.account_gl_balance_amt) AS Total_account_gl_bal_amt,
+MAX(GL.account_gl_balance_amt) AS MAX_account_gl_bal_amt,
+MIN(GL.account_gl_balance_amt) AS MIN_account_gl_bal_amt,
+AVG(GL.account_gl_balance_amt) AS AVG_account_gl_bal_amt,
+TRN.Average_opening_Bal_Amt,
+TRN.Max_opening_Bal_Amt,
+TRN.Tot_CLOSING_BAL_AMT,
+TRN.Min_CLOSING_BAL_AMT,
+PL.PARTY_RGN                     
+,PL.PARTY_LOC_START_DT            
+,PL.PARTY_LOC_END_DT              
+,PL.HOUSE_NO                      
+,PL.STREET_NO                     
+,PL.STREET_NAME                   
+,PL.ADDRESS_LINE_1_TXT            
+,PL.ADDRESS_LINE_2_TXT            
+,PL.CITY_NM                       
+,PL.STATE_NM                      
+,PL.COUNTRY_NM
+,PL.POSTAL_CD
+
+FROM 
+(
+SEL ACCOUNT_ID, ACCOUNT_GL_BAL_DT  FROM  TD_BIM_FR_TRNG_DB.IDEA_T_TGT_GL_BALANCE
+UNION 
+SEL ACCOUNT_ID, ACCT_TRANS_DT  FROM  TD_BIM_FR_TRNG_DB.IDEA_T_TGT_ACCOUNT_TRAN
+MINUS
+SEL ACCOUNT_ID, ACCOUNT_GL_BAL_DT  FROM  TD_BIM_FR_TRNG_DB.IDEA_T_TGT_GL_BALANCE WHERE ACCOUNT_GL_PST_TYPE_CD='CIC' 
+INTERSECT 
+SEL ACCOUNT_ID, ACCOUNT_GL_BAL_DT  FROM  TD_BIM_FR_TRNG_DB.IDEA_T_TGT_GL_BALANCE WHERE ACCOUNT_GL_PST_TYPE_CD IN ('ROB','WIC')
+UNION ALL
+SEL ACCOUNT_ID, ACCOUNT_GL_BAL_DT  FROM  TD_BIM_FR_TRNG_DB.IDEA_T_TGT_GL_BALANCE WHERE ACCOUNT_GL_PST_TYPE_CD IN ('ROB','WIC')
+) GL_TRN
+
+INNER JOIN TD_BIM_FR_TRNG_DB.IDEA_T_TGT_GL_BALANCE GL
+ON GL_TRN.ACCOUNT_ID = GL.ACCOUNT_ID
+and  GL_TRN.ACCOUNT_GL_BAL_DT = GL.ACCOUNT_GL_BAL_DT
+
+LEFT JOIN (SELECT ACCOUNT_ID,ACCT_TRANS_REF_NO,ACCT_TRANS_DT,AVG(OPENING_BAL_AMT) AS Average_opening_Bal_Amt,
+Max(OPENING_BAL_AMT) AS Max_opening_Bal_Amt, Sum(CLOSING_BAL_AMT) As Tot_CLOSING_BAL_AMT, min(CLOSING_BAL_AMT) As Min_CLOSING_BAL_AMT,
+TRANS_TYPE_CD,TRANS_CATEG_CD,TO_BANK_CD,TO_ACCOUNT_NO
+
+from TD_BIM_FR_TRNG_DB.IDEA_T_TGT_ACCOUNT_TRAN 
+where Trans_Categ_Cd  <> '' and To_Bank_Cd is not null
+group by ACCOUNT_ID,ACCT_TRANS_REF_NO,ACCT_TRANS_DT,TRANS_TYPE_CD,TRANS_CATEG_CD,TO_BANK_CD,TO_ACCOUNT_NO
+) TRN
+ON GL.ACCOUNT_ID = TRN.ACCOUNT_ID
+and  GL.ACCOUNT_GL_BAL_DT = TRN.ACCT_TRANS_DT
+
+INNER JOIN TD_BIM_FR_TRNG_DB.IDEA_T_TGT_ACCOUNT_PARTY AP
+ON GL.ACCOUNT_ID = AP.ACCOUNT_ID
+AND AP.ACCOUNT_PARTY_END_DT >= CURRENT_DATE
+
+LEFT JOIN TD_BIM_FR_TRNG_DB.IDEA_T_TGT_PARTY_LOCATOR PL
+ON AP.PARTY_ID = PL.PARTY_ID
+AND PL.PARTY_LOC_END_DT = '9999-12-31'
+
+GROUP BY GL_TRN.ACCOUNT_ID,GL_TRN.ACCOUNT_GL_BAL_DT,TRN.Average_opening_Bal_Amt,TRN.Max_opening_Bal_Amt,TRN.Tot_CLOSING_BAL_AMT,
+TRN.Min_CLOSING_BAL_AMT,PL.PARTY_RGN                     
+,PL.PARTY_LOC_START_DT            
+,PL.PARTY_LOC_END_DT              
+,PL.HOUSE_NO                      
+,PL.STREET_NO                     
+,PL.STREET_NAME                   
+,PL.ADDRESS_LINE_1_TXT            
+,PL.ADDRESS_LINE_2_TXT            
+,PL.CITY_NM                       
+,PL.STATE_NM                      
+,PL.COUNTRY_NM
+,PL.POSTAL_CD
+
+;
+
+.IF ERRORCODE <> 0 THEN .QUIT ERRORCODE
+
+
+.QUIT 0
+
+EOF
+#===============================================================================
+#END BTEQ EXECUTION
+#===============================================================================

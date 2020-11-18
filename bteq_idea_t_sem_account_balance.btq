@@ -1,0 +1,77 @@
+#===============================================================================
+# Title            : bteq_idea_t_sem_account_balance.btq
+# Description      : Script populates IDEA_T_SEM_ACCOUNT_BALANCE table
+# Source Tables    : IDEA Target tables
+# Target Table     : IDEA_T_SEM_ACCOUNT_BALANCE
+# Key Columns      : ACCOUNT_ID 
+#========================================================================================================
+
+bteq <<EOF
+
+.SET WIDTH 150;
+
+.run file td_logon.txt;
+
+.IF ERRORCODE <> 0 THEN .GOTO ERRORS
+
+.IF ERRORCODE <> 0 THEN .GOTO ERRORS
+
+.SET QUERY_BAND = 'bteq_idea_t_sem_account_balance.btq;' FOR SESSION   ;
+
+.IF ERRORCODE <> 0 THEN .GOTO ERRORS
+
+
+/*************************************************************************************************
+                                     DELETE/TRUNCATE SEMANTIC TABLE
+*************************************************************************************************/
+
+DELETE FROM TD_BIM_FR_TRNG_DB.IDEA_T_SEM_ACCOUNT_BALANCE APR
+WHERE EXISTS (SELECT 1 FROM TD_BIM_FR_TRNG_DB.IDEA_T_TGT_ACCOUNT ACT
+                       WHERE APR.ACCOUNT_ID = ACT.ACCOUNT_ID );
+
+
+/*************************************************************************************************
+                                      INSERT DATA TO SEMANTIC TABLE
+*************************************************************************************************/
+
+INS INTO  TD_BIM_FR_TRNG_DB.IDEA_T_SEM_ACCOUNT_BALANCE
+SELECT 
+    Act.Account_Id,
+    Act_Prd.Product_Id,
+    Row_Number() Over(order by Act.Account_Id)  As Acct_Seq_No,
+	Rank() Over(order by ACT_PRD.Product_Id)  As Prod_Seq_No,
+    Sum(case when Lon.loan_amt is not null then Lon.loan_amt else act.Account_Bal_Amt end ) Over(Partition By ACT.Account_id order by act.Account_Open_Dttm) As Cum_Loan_Bal_Amt,
+    Sum(act.Account_Bal_Amt) Over (partition by ACT_PRD.Product_Id ) As Bal_Amt_Prod,
+    Sum(case when Lon.loan_amt is not null then Lon.loan_amt else act.Account_Bal_Amt end ) Over (partition by ACT_PRD.Product_Id  order BY act.Account_Open_Dttm rows unbounded preceding) As Cum_Bal_Amt_Per_Prod,
+    Sum(case when Lon.loan_amt is not null then Lon.loan_amt else act.Account_Bal_Amt end ) Over (partition by ACT_PRD.Account_id  order BY act.Account_Open_Dttm rows between 1 following and 10 following) As Cum_Bal_Amt_Prod_Block,
+    Row_Number() Over (partition by ACT_PRD.Product_Id order by ACT.Account_Id) as Prod_lvl_Seq_No,
+    RANK() Over (partition by ACT_PRD.Product_Id order by ACT.Account_Id) as Block_lvl_Seq_No,
+    DENSE_RANK() Over (partition by ACT_PRD.Product_Id order by ACT.Account_Id) as Block_lvl_Incr_No,
+	MAX(Loan_Amt) over (partition by Lon.Account_Id) As Max_Loan_amt,
+	Min(act.Account_Bal_Amt) Over(Partition by  ACT.Account_id ) Min_Bal_Amt,
+	AVG(Loan_Amt) over (partition by Lon.Account_Id) As Avg_Loan_amt
+	
+  
+from  TD_BIM_FR_TRNG_DB.IDEA_T_TGT_ACCOUNT_PRODUCT Act_Prd
+Right Outer Join TD_BIM_FR_TRNG_DB.IDEA_T_TGT_ACCOUNT Act
+on Act.Account_Id = Act_Prd.Account_Id
+
+left join TD_BIM_FR_TRNG_DB.IDEA_T_TGT_LOAN_TERM_ACCT Lon
+on Act.Account_Id = Lon.Account_Id
+
+WHERE  act.Account_Type_Cd ='SAVINGS' ;
+
+.IF ERRORCODE <> 0 THEN .GOTO ERRORS
+
+
+.QUIT 0
+
+/****************** Return Error Code and exit from Bteq *********************/
+.LABEL ERRORS
+
+.QUIT ERRORCODE
+
+EOF
+#===============================================================================
+#END BTEQ EXECUTION
+#===============================================================================

@@ -1,0 +1,113 @@
+#===============================================================================
+# Title            : bteq_idea_t_sem_account_product_rel.btq
+# Description      : Script populates IDEA_T_SEM_ACCOUNT_PRODUCT_REL table
+# Source Tables    : IDEA Target tables
+# Target Table     : IDEA_T_SEM_ACCOUNT_PRODUCT_REL
+# Key Columns      : ACCOUNT_ID & PRODUCT_ID
+#========================================================================================================
+
+bteq <<EOF
+
+.SET WIDTH 150;
+
+.run file td_logon.txt;
+
+.IF ERRORCODE <> 0 THEN .GOTO ERRORS
+
+
+.IF ERRORCODE <> 0 THEN .GOTO ERRORS
+
+.SET QUERY_BAND = 'bteq_idea_t_sem_account_product_rel.btq;' FOR SESSION   ;
+
+.IF ERRORCODE <> 0 THEN .GOTO ERRORS
+
+
+/*************************************************************************************************
+                                     DELETE/TRUNCATE SEMANTIC TABLE
+*************************************************************************************************/
+
+DELETE FROM TD_BIM_FR_TRNG_DB.IDEA_T_SEM_ACCOUNT_PRODUCT_REL ;
+
+
+/*************************************************************************************************
+                                      INSERT DATA TO SEMANTIC TABLE
+*************************************************************************************************/
+
+INSERT INTO TD_BIM_FR_TRNG_DB.IDEA_T_SEM_ACCOUNT_PRODUCT_REL
+(
+Account_Id,
+Src_Account_No,
+Account_Type_Cd,
+Account_Source_Cd,
+Account_Current_Status_Type_Cd,
+Disposition_txt,
+Account_Bal_Amt,
+Account_Open_Dttm,
+Account_Close_Dttm,
+Account_Name,
+PRODUCT_ID,
+PARENT_PRODUCT_ID,
+PRODUCT_TYPE_CD,
+PRODUCT_DESC,
+PRODUCT_NAME,
+HOST_PROD_ID,
+PRODUCT_START_DT,
+PRODUCT_END_DT,
+FIN_PRODUCT_ID,
+Account_Prod_Desc
+)
+SEL
+DISTINCT
+CSUM(ACCOUNT_ID,SRC_ACCOUNT_NO) ,
+MSUM(1,6,SRC_ACCOUNT_NO) ,
+MSUM(1,6,SRC_ACCOUNT_NO ASC) ,
+MSUM(1,6,SRC_ACCOUNT_NO DESC) ,
+Act.Account_Id,
+Act.Src_Account_No,
+LTRIM(Act.Account_Type_Cd) Account_Type_Cd,
+RTRIM(Act.Account_Source_Cd),
+Act.Account_Current_Status_Type_Cd,
+CASE WHEN Act.Disposition_Cd LIKE 'O%' THEN Act.Disposition_Cd||'-'||'As Per Source'
+     else 'Unknown Value'end As Disposition_txt,
+Act.Account_Bal_Amt,
+CAST(Act.Account_Open_Dttm As Date),
+Act.Account_Close_Dttm,
+Cast(Act.Account_Name as varchar(1000)),
+prd.product_id
+,prd.parent_product_id
+,prd.product_type_cd
+,prd.product_desc
+,prd.product_name
+,prd.host_prod_id
+,prd.product_start_dt
+,prd.product_end_dt
+,prd.fin_product_id
+,COALESCE( Act.Account_Desc_Txt,'Unknown Account') ||'--'|| COALESCE(TRIM(prd.prodct_text),'Unknown Product') As Account_Prod_Desc
+
+
+From (Sel distinct * from TD_BIM_FR_TRNG_DB.IDEA_T_TGT_ACCOUNT )  Act
+
+JOIN TD_BIM_FR_TRNG_DB.IDEA_T_TGT_ACCOUNT_PRODUCT Act_Prd
+ON Act.Account_Id = Act_Prd.Account_Id
+ 
+
+left join TD_BIM_FR_TRNG_DB.IDEA_T_TGT_PRODUCT Prd
+ON Act_Prd.product_id = Prd.product_id 
+AND PRD.product_end_dt = '9999-12-31'
+
+where CAST(Act.Account_Close_Dttm as date ) = '9999-12-31';
+
+.IF ERRORCODE <> 0 THEN .GOTO ERRORS
+
+
+.QUIT 0
+
+/****************** Return Error Code and exit from Bteq *********************/
+.LABEL ERRORS
+
+.QUIT ERRORCODE
+
+EOF
+#===============================================================================
+#END BTEQ EXECUTION
+#===============================================================================
