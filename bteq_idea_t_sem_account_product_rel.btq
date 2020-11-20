@@ -58,10 +58,6 @@ Account_Prod_Desc
 )
 SEL
 DISTINCT
-CSUM(ACCOUNT_ID,SRC_ACCOUNT_NO) ,
-MSUM(1,6,SRC_ACCOUNT_NO) ,
-MSUM(1,6,SRC_ACCOUNT_NO ASC) ,
-MSUM(1,6,SRC_ACCOUNT_NO DESC) ,
 Act.Account_Id,
 Act.Src_Account_No,
 LTRIM(Act.Account_Type_Cd) Account_Type_Cd,
