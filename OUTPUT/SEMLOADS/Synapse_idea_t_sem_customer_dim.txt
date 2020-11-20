@@ -187,7 +187,10 @@ INSERT TD_BIM_FR_TRNG_DB.IDEA_T_SEM_CUSTOMER_DIM
 ,POSTAL_CD                     
 ,SEM_INS_DT                    
 ,SEM_INS_DTTM                  
-,SEM_INS_TM                    
+,SEM_INS_TM  
+,SEM_UPD_DT
+,SEM_UPD_DTTM
+,SEM_UPD_TM
 )
 SELECT P.PARTY_ID
 ,P.PARTY_TYPE_CD
