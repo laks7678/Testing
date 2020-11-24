@@ -1,0 +1,194 @@
+#===============================================================================
+# THIS FILE IS CALLED BY AN INFORMATICA COMMAND TASK OR BY WLM DIRECTLY
+#===============================================================================
+
+
+
+
+##LIST OF PARAMETERS
+
+#=============================================================================================
+#
+#
+# TITLE     	    : 	AUDIT STATISTICS TARGET TABLE LOAD
+#
+# FILENAME    	    : 	BTEQ_ESI_AUDT_STTSTC_TGT.SH
+#
+# DESCRIPTION 	    : 	THIS SCRIPT LOADS THE TARGET TABLE RECORD COUNT/SUM INTO AUDT_STTSTC TABLE 
+#                    	BASED ON THE RULE PRESENT IN RULE TABLE
+# 
+# SOURCE TABLES     :	ANY TARGET TABLE IN ESI LZ
+#
+# TARGET TABLES	    : 	AUDT_STTSTC
+#
+# KEY COLUMNS	    : 	LOAD_LOG_KEY
+#
+# DEVELOPER         : 	INFOSYS, OFFSHORE MCITY.
+#
+# CREATED ON        : 	OCT 01, 2009.
+#
+# LOCATION     	    : 	/U01${HOST}/APP/ESI/TEST/SCRIPTS
+#
+# LOGIC             :	BASED ON THE AUDIT RULE FOR A TABLE, GET THE COUNT/SUM ON A COLUMN AND POPULATE 
+#                    	AN ENTRY FOR TARGET TABLE COUNT/SUM IN THE AUDIT STATISTICS TABLE
+#
+# PARAMETERS	    : 	TBL_NM,CLMN_NM,SUBJ_AREA_NM,TGT_LOAD_PRCS_CD,TGT_LOAD_LOG,HOST, RUN_ENV
+#
+# MODIFICATION LOG
+# ----------------
+# CREATED BY                    DATE(MM-DD-YYYY)   DESCRIPTION
+#-------------------------------------------------------------------------------
+# INFOSYS OFFSHORE, MCITY.       21-10-2009        INITIAL REVISION
+# INFOSYS OFFSHORE, MCITY.       05-01-2010        REVISION & COMMENTING
+#============================================================================================
+
+#===============================================================================
+#BTEQ SCRIPT
+#===============================================================================
+
+
+
+
+
+
+--==============================================================================
+-- PUT BTEQ IN TRANSACTION MODE
+--==============================================================================
+
+
+
+--==============================================================================
+/* datepart USERNAME AND PASSWORD                                              */;
+
+
+
+--==============================================================================
+
+--========================== ERROR HANDLING=====================================
+--========================== ERROR HANDLING=====================================
+
+--==============================================================================
+/* SET DEFAULT DATABASE DERIVED FROM PARAMETER FILE                           */;
+
+
+
+--==============================================================================
+DATABASE ${ETL_VIEWS_ESI};
+
+
+
+
+--========================== ERROR HANDLING=====================================
+--========================== ERROR HANDLING=====================================
+
+--===========================START TRANSACTION==================================
+BEGIN TRANSACTION;
+
+
+
+--========================== ERROR HANDLING=====================================
+--========================== ERROR HANDLING=====================================
+
+-- VVVVVVVVVVV BEGIN SQL  VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+
+--===============================================================================
+-- AUDIT BALANCING BTEQ 1 OF 3:
+-- PURPOSE :   THIS BTEQ IS USED TO LOAD THE AUDIT STATISTIC TABLE WITH THE COUNTS/SUM FOR A PARTICULAR TABLE
+-- BY READING THE AUDIT RULE TABLE(FOR ESI-LZ AUDIT BALANCING PROCESS).
+---===============================================================================
+
+INSERT INTO AUDT_STTSTC
+(
+	AUDT_RULE_ID, 
+	EVNT_DTM, 
+	PRD_STRT_DT,
+	PRD_END_DT,
+	FILE_NM,
+	SESN_NM,
+	MAPG_NM,
+	RCRD_CNT,
+	CLMN_TOTL,
+	TBL_TOTL,
+	LOAD_LOG_KEY,
+	LOAD_PRCS_CD,
+	TBL_NM
+ )
+SELECT 
+	AUDT_RULE_ID,
+	CONVERT(DATETIME, GETDATE()),
+	CONVERT(DATE, GETDATE()),
+	CONVERT(DATE, GETDATE()),
+	'N/A',
+	'N/A',
+	'N/A',
+ 	 CNTALL,
+	SUMCLMN,
+	0,
+	LOAD_LOG_KEY,
+	'$TGT_LOAD_PRCS_CD' AS LOAD_PRCS_CD,
+	'$TBL_NM' AS TBL_NM
+
+FROM 
+(SELECT COUNT(*), COALESCE(SUM(CASE WHEN $CLMN_NM=0 THEN 0 ELSE $CLMN_NM END),0) FROM 
+ $TBL_NM
+ WHERE LOAD_LOG_KEY= ( SELECT LOAD_LOG_KEY
+                       FROM $TGT_LOAD_LOG
+                       WHERE LOAD_STRT_DTM = ( SELECT MAX (LOAD_STRT_DTM) LOAD_STRT_DTM
+                                               FROM $TGT_LOAD_LOG
+					       WHERE 
+					       SUBJ_AREA_NM = TRIM('$SUBJ_AREA_NM') AND 
+					       WORK_FLOW_NM  = TRIM('$WORK_FLOW_NM') AND
+		                               PBLSH_IND    = 'Y'
+					     )
+                     )
+) AS TEMP2(CNTALL,SUMCLMN),
+
+	(SELECT LOAD_LOG_KEY  
+  		 FROM $TGT_LOAD_LOG
+  			 WHERE LOAD_STRT_DTM = 
+      				 ( SELECT MAX(LOAD_STRT_DTM) LOAD_STRT_DTM
+        				 FROM $TGT_LOAD_LOG
+						WHERE 
+						 SUBJ_AREA_NM = TRIM('$SUBJ_AREA_NM') AND 
+       					 	 WORK_FLOW_NM  = TRIM('$WORK_FLOW_NM') AND
+         					 PBLSH_IND    = 'Y'
+				)
+	)AS TEMP3(LOAD_LOG_KEY),
+
+	(SELECT AUDT_RULE_ID 
+  		FROM AUDT_BLNCG_RULE
+  			WHERE TBL_NM = TRIM('$TBL_NM')
+  			AND CLMN_NM  = TRIM('$CLMN')
+  			AND ENVRNMNT_CD = '$TGT_LOAD_PRCS_CD'
+	) AS TEMP4(AUDT_RULE_ID);
+
+
+
+
+--========================== ERROR HANDLING=====================================
+--========================== ERROR HANDLING=====================================
+COMMIT TRANSACTION;
+
+
+
+
+--===========================COMMIT TRANSACTION====================================
+
+
+
+
+
+
+
+#============================================================================*/
+# SHOW AIX RETURN CODE AND EXIT WITH IT                                      */
+#============================================================================
+
+
+*/
+RETURN_CODE=$?
+
+EXIT $RETURN_CODE
+
+#******************************************************************************/
+#/*  END OF BTEQ_ESI_AUDT_STTSTC_TGT.SH*/;
