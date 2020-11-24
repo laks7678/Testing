@@ -18,7 +18,7 @@ spark=SparkSession.builder.appName("Building Pyspark code with Synapse statement
 sc=spark.sparkContext
 
 cp = configparser.ConfigParser()
-g = Github("fb45ca016a080f3355a22686dffbae1d753b6f63")
+g = Github("6707170a792c9abc8b0f69fe5151daa7d0644a95")
 repo = g.get_user().get_repo( "Testing" )
 files_and_dirs = [fd for fd in repo.get_dir_contents('/')]
 fileDataList=[]
