@@ -1,2 +1,2 @@
-2020-11-24 12:30:42 :: ERROR :: FileName : GIT_ETL_CONV.py, LineNumber : 687, ExceptionType : <class 'configparser.NoSectionError'>, Exception : No section: 'MySQLConnection'
+2020-11-24 12:33:43 :: ERROR :: FileName : GIT_ETL_CONV.py, LineNumber : 687, ExceptionType : <class 'configparser.NoSectionError'>, Exception : No section: 'MySQLConnection'
 
