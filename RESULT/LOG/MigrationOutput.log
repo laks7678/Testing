@@ -1,14 +1,2 @@
-2020-11-24 08:26:44 :: Synapse_functions_test.txt :: SUCCESS
-
-2020-11-24 08:26:49 :: Synapse_idea_t_sem_account_balance.txt :: SUCCESS
-
-2020-11-24 08:26:55 :: Synapse_idea_t_sem_account_product_rel.txt :: SUCCESS
-
-2020-11-24 08:27:03 :: Synapse_idea_t_sem_act_prd_prty_denorm.txt :: SUCCESS
-
-2020-11-24 08:27:11 :: Synapse_idea_t_sem_customer_dim.txt :: SUCCESS
-
-2020-11-24 08:27:16 :: Synapse_idea_t_sem_gl_balance_fact.txt :: SUCCESS
-
-2020-11-24 08:27:19 :: Synapse_temp.txt :: SUCCESS
+2020-11-24 12:25:27 :: ERROR :: FileName : GIT_ETL_CONV.py, LineNumber : 686, ExceptionType : <class 'configparser.NoSectionError'>, Exception : No section: 'MySQLConnection'
 
