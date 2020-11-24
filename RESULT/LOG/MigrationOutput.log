@@ -1,2 +1,14 @@
-2020-11-24 16:30:57 :: ERROR :: FileName : new.py, LineNumber : 725, ExceptionType : <class 'NameError'>, Exception : name 'synapseQueriesFilePath' is not defined
+2020-11-24 16:42:15 :: Synapse_functions_test.txt :: Medium or Complex :: SUCCESS
+
+2020-11-24 16:42:26 :: Synapse_idea_t_sem_account_balance.txt :: Simple :: SUCCESS
+
+2020-11-24 16:42:37 :: Synapse_idea_t_sem_account_product_rel.txt :: Simple :: SUCCESS
+
+2020-11-24 16:42:51 :: Synapse_idea_t_sem_act_prd_prty_denorm.txt :: Medium or Complex :: SUCCESS
+
+2020-11-24 16:43:06 :: Synapse_idea_t_sem_customer_dim.txt :: Simple :: SUCCESS
+
+2020-11-24 16:43:18 :: Synapse_idea_t_sem_gl_balance_fact.txt :: Simple :: SUCCESS
+
+2020-11-24 16:43:28 :: Synapse_temp.txt :: Medium or Complex :: SUCCESS
 
