@@ -1,2 +1,2 @@
-2020-11-24 16:22:36 :: ERROR :: FileName : new.py, LineNumber : 717, ExceptionType : <class 'configparser.NoSectionError'>, Exception : No section: 'MySQLConnection'
+2020-11-24 16:30:57 :: ERROR :: FileName : new.py, LineNumber : 725, ExceptionType : <class 'NameError'>, Exception : name 'synapseQueriesFilePath' is not defined
 
