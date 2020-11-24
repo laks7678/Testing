@@ -46,7 +46,7 @@ cursor = connection.cursor()
 cursor.execute(query0)
 connection.commit()
 
-query1 = " CREATE TABLE #EMPLOYEE ( EMPLOYEENO INT, FIRSTNAME VARCHAR(30) , LASTNAME NVARCHAR(30) , DOB DATE, JOINEDDATE DATE, DEPARTMENTNO SMALLINT )"
+query1 = " CREATE TABLE #EMPLOYEE ( EMPLOYEENO INT, FIRSTNAME VARCHAR(30) , LASTNAME NVARCHAR(30) , DOB DATE, JOINEDDATE DATE, DEPARTMENTNO SMALLINT)"
 cursor = connection.cursor()
 cursor.execute(query1)
 connection.commit()
