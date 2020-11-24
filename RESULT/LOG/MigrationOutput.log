@@ -1,2 +1,14 @@
-2020-11-24 12:54:28 :: ERROR :: FileName : GIT_ETL_CONV.py, LineNumber : 687, ExceptionType : <class 'mysql.connector.errors.DatabaseError'>, Exception : 2006 (HY000): MySQL server has gone away
+2020-11-24 14:53:24 :: Synapse_functions_test.txt :: Medium or Complex :: SUCCESS
+
+2020-11-24 14:53:31 :: Synapse_idea_t_sem_account_balance.txt :: Simple :: SUCCESS
+
+2020-11-24 14:53:38 :: Synapse_idea_t_sem_account_product_rel.txt :: Simple :: SUCCESS
+
+2020-11-24 14:53:47 :: Synapse_idea_t_sem_act_prd_prty_denorm.txt :: Medium or Complex :: SUCCESS
+
+2020-11-24 14:53:56 :: Synapse_idea_t_sem_customer_dim.txt :: Simple :: SUCCESS
+
+2020-11-24 14:54:03 :: Synapse_idea_t_sem_gl_balance_fact.txt :: Simple :: SUCCESS
+
+2020-11-24 14:54:10 :: Synapse_temp.txt :: Medium or Complex :: SUCCESS
 
