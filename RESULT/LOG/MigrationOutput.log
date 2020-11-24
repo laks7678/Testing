@@ -1,2 +1,2 @@
-2020-11-24 12:36:14 :: ERROR :: FileName : GIT_ETL_CONV.py, LineNumber : 687, ExceptionType : <class 'configparser.NoSectionError'>, Exception : No section: 'MySQLConnection'
+2020-11-24 12:54:28 :: ERROR :: FileName : GIT_ETL_CONV.py, LineNumber : 687, ExceptionType : <class 'mysql.connector.errors.DatabaseError'>, Exception : 2006 (HY000): MySQL server has gone away
 
