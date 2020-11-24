@@ -17,20 +17,20 @@ from _io import StringIO
 spark=SparkSession.builder.appName("Building Pyspark code with Synapse statements embedded").getOrCreate()
 sc=spark.sparkContext
 
+
 cp = configparser.ConfigParser()
-g = Github("d4d0b8faff83468f501a42da4942267b9f565a29")
-repo = g.get_user().get_repo( "Testing" )
+g = Github('0a002ed93737dbbb5f1d689e297226223abb1a8a')
+repo = g.get_user().get_repo( 'Testing' )
 files_and_dirs = [fd for fd in repo.get_dir_contents('/')]
 fileDataList=[]
-contents = repo.get_contents("resources")
+contents = repo.get_contents('resources')
 while len(contents)>0:
     file_content = contents.pop(0)
     if file_content.type=='dir':
         contents.extend(repo.get_contents(file_content.path))
     else :
-        if file_content.name=="properties_1.ini":
+        if file_content.name=='properties_1.ini':
             cp.readfp(StringIO(file_content.decoded_content.decode()))
-
 
 
 database =cp.get('SQLSERVERDBConnection', 'database')
