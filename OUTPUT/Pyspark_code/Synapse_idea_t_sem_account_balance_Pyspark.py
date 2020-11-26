@@ -22,7 +22,7 @@ sc=spark.sparkContext
 cp = configparser.ConfigParser()
 g = Github(os.environ.get('GITHUB_TOKEN'))
 repo = g.get_user().get_repo( 'Testing' )
-files_and_dirs = [fd for fd in repo.get_dir_contents('/')]
+files_and_dirs = [fd for fd in repo.get_contents('/')]
 fileDataList=[]
 contents = repo.get_contents('resources')
 while len(contents)>0:
