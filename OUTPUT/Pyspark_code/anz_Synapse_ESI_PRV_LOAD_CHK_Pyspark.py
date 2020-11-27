@@ -42,9 +42,3 @@ server = cp.get('SQLSERVERDBConnection', 'server')
 connection = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={user};PWD={password}')
 
 
-query4 = "SELECT LOAD_LOG_KEY FROM $TGT_LOAD_LOGWHERE WORK_FLOW_NM='$WORK_FLOW_NM'AND PBLSH_IND = 'N'AND LOAD_END_DTM = ( SELECT MAX (LOAD_END_DTM) FROM $TGT_LOAD_LOG WHERE SUBJ_AREA_NM = TRIM('$SUBJ_AREA_NM') )"
-cursor = connection.cursor()
-cursor.execute(query4)
-for row in cursor:
-    print(row)
-
