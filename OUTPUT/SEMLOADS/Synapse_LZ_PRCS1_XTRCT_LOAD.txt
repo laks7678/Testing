@@ -90,7 +90,6 @@ BEGIN TRANSACTION;
 
 
 
-
 --==========================DELETING RECORDS FROM THE TABLE======================
 DELETE FROM $DB_ETL_VIEWS_ESI.$PRCS1_NM;
 
