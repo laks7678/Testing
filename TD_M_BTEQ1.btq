@@ -1,0 +1,233 @@
+/*
+############################################################################
+#
+#  FILENAME    : TD_M_BTEQ.BTQ
+#  PART OF     : TRANSFORMATION
+#  TYPE        : BTEQ
+#  JOB GROUP   : CRM1-(CONTROL-M scheduling TOOL)
+#
+#  -------------------------------------------------------------------------
+#  PURPOSE     : TRANSFORMING AND MOVING DATA TO LOAD READY TABLES
+#
+#  COMMENTS    : #DESIGNDOCUMENTREFERENCE#
+#
+#  DATASOURCE  : #DATASOURCE#
+#                
+#  -------------------------------------------------------------------------
+#  DB-VERSION  : TERADATA 16.0
+#
+#  -------------------------------------------------------------------------
+#  PROJECT     : IDEA
+#  SUBPROJECT  : ETL DEVELOPEMENT
+#
+#  AUTHOR      : SURENDRA REDDY KARRI
+#  DEPARTMENT  : TERADATA,ETL PROFESSIONAL SERVICES
+#  VERSION     : 1.0
+#  DATE        : 23-NOV-2020
+#  (C) 2020 BY CAPGEMINI CORPORATION
+#  -------------------------------------------------------------------------
+#  HISTORY:
+#  INITIAL VERSION
+############################################################################
+#  VARIABLE(S) USED 
+#	TD_BIM_FR_TRNG_DB
+#	
+#      
+############################################################################
+*/
+.RUN FILE = H:\IDEA_EDW_DataStage\Production\Misc\Common\Logon.txt;
+/*
+############################################################################
+#  CHECK TO SEE IF THE TABLE IS PRESENT OR NOT 
+############################################################################
+#  THE DECISION ABOUT THE PRESENCE OF THE TABLE IS BASED
+#  ON THE ERRORCODE RETURNED BY THE BTEQ
+############################################################################
+#  TABLE PRESENCE CHECKING
+#  	_____________________
+#      |   ERRORCODE         |
+#       _____________________
+#         | |
+#         | --------  ( NOT EQUAL TO 0 )  --->  EXIT
+#         |
+#         ----------  ( ELSE )		  --->  CONTINUE
+############################################################################
+#  ACTIVITYCOUNT	: NUMBER OF ROWS AFFECTED BY SQL REQUEST
+#      	_____________________
+#      |  ACTIVITYCOUNT      |
+#       _____________________
+#         | |
+#         | --------  ( 0 )		  ---> THE TABLE DOES NOT EXIST
+#	  |                                    QUIT
+#         ----------  ( 1 )               ---> THE TABLE DOES EXIST
+# 					       DELETE DATA FROM TABLE - DELETE_TAB 
+############################################################################
+*/
+SELECT 
+	COUNT(* )
+FROM
+	DBC.TABLESV 
+WHERE
+	DATABASENAME = 'IDEA_TEST_PHASE_RPT'
+AND	TABLENAME = 'IDEA_T_SEM_COMPLETE_STAS'
+HAVING
+	COUNT(*) > 0;
+
+.IF ERRORCODE <> 0 THEN .QUIT 10;
+.IF ACTIVITYCOUNT = 0 THEN .QUIT 10; 
+.IF ACTIVITYCOUNT = 1 THEN .GOTO DELETE_TAB; 
+
+/*
+############################################################################
+#  DELETE THE DATA FROM TABLE 
+############################################################################
+*/
+.LABEL DELETE_TAB;
+DELETE IDEA_TEST_PHASE_TRNS.IDEA_T_SEM_ACCOUNT_DETAILS ALL;
+
+
+/*
+############################################################################
+Business Rule Defined File 	: $/IDEA-EDW/S - Services and Deliverables/
+#  S05 - EDW Standard Track
+#  IDEA EDW - Source Matrix  v.1.0 #       ( File Name )
+############################################################################
+#  SECTION     : 
+#  DESCRIPTION : 
+############################################################################
+#  GROUP BY STATEMENT IS USED TO AVOID ANY DUPLICATE ROWS TO GO IN
+############################################################################
+#  ALIAS NAME :
+#	
+############################################################################
+*/
+
+   
+
+/*********************** Batch Log Entry while Starting Execution of bteq *********************/ 
+
+ INSERT IDEA_TEST_PHASE_TGT	ABC_T_TGT_BATCH_LOG 
+ ( Batch_Id ,Process_Nm,Process_Type,Batch_Start_Dttm,Batch_End_Dttm,Batch_Status,User_Nm,Session_Id )
+ 
+ VALUES (:Var_Batch_Id ,'IDEA_M_TGT_ACCOUNT','bteq' ,Current_Timestamp(0),Null, 'Started',User,Session );
+ 
+ 
+ /*********************** SCD2 - Logically close existing record *********************/ 
+ 
+ 
+ 
+UPDATE IDEA_TEST_PHASE_TGT.ABC_T_TGT_ACCOUNT
+
+FROM IDEA_TEST_PHASE_TRNS	ABC_T_TRF_ACCOUNT TRF
+
+SET Account_Close_Dttm = CURRENT_TIMESTAMP(0) ,
+    ETL_UPD_DTTM =CURRENT_TIMESTAMP(6)
+	
+WHERE IDEA_TEST_PHASE_TGT.ABC_T_TGT_ACCOUNT.Account_Close_Dttm= Timestamp '9999-12-31 23:59:59'
+AND IDEA_TEST_PHASE_TGT.ABC_T_TGT_ACCOUNT.ACCOUNT_ID =TRF.ACCOUNT_ID
+AND ( COALESCE(IDEA_TEST_PHASE_TGT.ABC_T_TGT_ACCOUNT.Src_Account_No,'') <> COALESCE(TRF.Src_Account_No,'') 
+OR COALESCE(IDEA_TEST_PHASE_TGT.ABC_T_TGT_ACCOUNT.Account_Type_Cd,'') <> COALESCE(TRF.Account_Type_Cd,'') 
+OR COALESCE(IDEA_TEST_PHASE_TGT.ABC_T_TGT_ACCOUNT.Account_Source_Cd,'Unknown') <> COALESCE(TRF.Account_Source_Cd,'Unknown')
+OR COALESCE(IDEA_TEST_PHASE_TGT.ABC_T_TGT_ACCOUNT.Account_Current_Status_Type_Cd,'') <> COALESCE(TRF.Account_Current_Status_Type_Cd,'') 
+OR COALESCE(IDEA_TEST_PHASE_TGT.ABC_T_TGT_ACCOUNT.Disposition_Cd,'') <> COALESCE(TRF.Disposition_Cd,'') 
+OR COALESCE(IDEA_TEST_PHASE_TGT.ABC_T_TGT_ACCOUNT.Account_Name,'') <> COALESCE(TRF.Account_Name,'') 
+OR COALESCE(IDEA_TEST_PHASE_TGT.ABC_T_TGT_ACCOUNT.Account_Desc_Txt,'') <> COALESCE(TRF.Account_Desc_Txt,'') 
+) ;
+ 
+
+---------------------- SCD2 - Add new record or modified record -----
+
+INS IDEA_TEST_PHASE_TGT.ABC_T_TGT_ACCOUNT
+(Account_Id                    
+,Src_Account_No                
+,Account_Type_Cd               
+,Account_Source_Cd             
+,Account_Current_Status_Type_Cd
+,Disposition_Cd                
+,Account_Bal_Amt               
+,Account_Open_Dttm             
+,Account_Close_Dttm            
+,Account_Name                  
+,Account_Desc_Txt              
+,Etl_Ins_Dttm                  
+,Etl_Upd_Dttm                  
+,Batch_Id                      
+)
+
+SEL 
+TRF.Account_Id                    
+,TRF.Src_Account_No                
+,TRF.Account_Type_Cd               
+,TRF.Account_Source_Cd             
+,TRF.Account_Current_Status_Type_Cd
+,TRF.Disposition_Cd                
+,TRF.Account_Bal_Amt               
+,TRF.Account_Open_Dttm             
+,TRF.Account_Close_Dttm            
+,TRF.Account_Name                  
+,TRF.Account_Desc_Txt              
+,TRF.Etl_Ins_Dttm                  
+,TRF.Etl_Upd_Dttm                  
+,:Var_Batch_Id                      
+
+
+From IDEA_TEST_PHASE_TRNS.ABC_T_TRF_ACCOUNT trf
+left join IDEA_TEST_PHASE_TGT.ABC_T_TGT_ACCOUNT tgt
+on trf.ACCOUNT_ID = tgt.ACCOUNT_ID
+and tgt.Account_Close_Dttm= Timestamp '9999-12-31 23:59:59'
+
+where tgt.ACCOUNT_ID is Null ;
+
+/*********************** Batch Log Update for Completion of Macro *********************/ 
+
+UPDATE IDEA_TEST_PHASE_TGT.ABC_T_TGT_BATCH_LOG ----AFTER LOAN COMPLETED STSUS UPDATE
+ SET Batch_Status = 'Completed' ,
+     Batch_End_Dttm = Current_Timestamp(0)
+WHERE IDEA_TEST_PHASE_TGT.ABC_T_TGT_BATCH_LOG.Batch_Id =:Var_Batch_Id
+and IDEA_TEST_PHASE_TGT.ABC_T_TGT_BATCH_LOG.Process_Nm ='IDEA_M_TGT_ACCOUNT'
+and IDEA_TEST_PHASE_TGT.ABC_T_TGT_BATCH_LOG.Session_Id =Session
+and Cast(IDEA_TEST_PHASE_TGT.ABC_T_TGT_BATCH_LOG.Batch_Start_Dttm as date ) =Current_Date
+and IDEA_TEST_PHASE_TGT.ABC_T_TGT_BATCH_LOG.Batch_Status <> 'Completed';
+
+);
+
+
+-----------CREATING TEMP TABLE FOR SUMMERY CALCULATION -------
+
+CREATE SET VOLATILE TABLE ABC_T_TGT_ACCOUNT_SUMMERY_TEMP ,FALLBACK ,
+     CHECKSUM = DEFAULT,
+     DEFAULT MERGEBLOCKRATIO,
+     LOG
+     (
+      Account_Id BIGINT NOT NULL,
+      Src_Account_No DECIMAL(18,4) NOT NULL,
+      Account_Type_Cd CHAR(15) CHARACTER SET LATIN NOT CASESPECIFIC NOT NULL,
+      Account_Source_Cd CHAR(10) CHARACTER SET LATIN UPPERCASE NOT CASESPECIFIC,
+      Account_Current_Status_Type_Cd CHAR(20) CHARACTER SET LATIN NOT CASESPECIFIC,
+      Disposition_Cd CHAR(1) CHARACTER SET LATIN NOT CASESPECIFIC,
+      Account_Bal_Amt DECIMAL(38,8),
+      Account_Open_Dttm TIMESTAMP(0),
+      Account_Close_Dttm TIMESTAMP(4),
+      Account_Name VARCHAR(1000) CHARACTER SET UNICODE NOT CASESPECIFIC,
+      Account_Desc_Txt VARCHAR(20000) CHARACTER SET UNICODE NOT CASESPECIFIC,
+      Etl_Ins_Dttm TIMESTAMP(6),
+      Etl_Upd_Dttm TIMESTAMP(6),
+      Batch_Id DECIMAL(18,0) NOT NULL)
+PRIMARY INDEX ( Account_Id )
+ON COMMIT DELETE ROWS;
+
+DELETE FROM ABC_T_TGT_ACCOUNT_SUMMERY_TEMP ;
+
+INSERT INTO ABC_T_TGT_ACCOUNT_SUMMERY_TEMP
+SEL * FROM IDEA_TEST_PHASE_TGT.ABC_T_TGT_ACCOUNT_SUMMERY ;
+
+
+
+/*
+############################################################################
+#  Closing the BTEQ Script, Session Closed and Logging off
+############################################################################
+*/
+
+.LOGOFF;
+.QUIT;
