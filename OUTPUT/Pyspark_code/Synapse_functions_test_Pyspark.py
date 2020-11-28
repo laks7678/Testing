@@ -48,7 +48,7 @@ cursor.execute(query0)
 for row in cursor:
     print(row)
 
-query1 = "CREATE TABLE #ACCOUNT"
+df1 = "CREATE TABLE #ACCOUNT"
 cursor = connection.cursor()
 cursor.execute(query1)
 connection.commit()
@@ -65,12 +65,12 @@ cursor.execute(query3)
 for row in cursor:
     print(row)
 
-query4 = "DELETE FROM ACCOUNT"
+df4 = "DELETE FROM ACCOUNT"
 cursor = connection.cursor()
 cursor.execute(query4)
 connection.commit()
 
-query5 = "DELETE FROM ACCOUNT"
+df5 = "DELETE FROM ACCOUNT"
 cursor = connection.cursor()
 cursor.execute(query5)
 connection.commit()
