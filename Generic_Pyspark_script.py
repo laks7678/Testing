@@ -1,11 +1,14 @@
 import sys
 import os
 import logging
+#Importing Config parser object to read property files
 import configparser
+#Connecting github using pygithub package
 from github import Github
 import findspark
 findspark.init()
 findspark.find()
+#Importing spark packages
 import pyspark
 from pyspark import SparkContext, SparkConf, SQLContext
 from pyspark.sql import SparkSession
