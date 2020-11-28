@@ -1,26 +1,29 @@
 import sys
 import os
 import logging
+#Importing Config parser object to read property files
 import configparser
+#Connecting github using pygithub package
 from github import Github
 import findspark
 findspark.init()
 findspark.find()
+#Importing spark packages
 import pyspark
 from pyspark import SparkContext, SparkConf, SQLContext
+#Importing SparkSession
 from pyspark.sql import SparkSession
 import pyodbc
 import pandas as pd
+#Importing spark sql packages
 from pyspark.sql import functions as F
 from pyspark.sql.functions import lit, col
 from _io import StringIO
 
-spark=SparkSession.builder.appName("Building Pyspark code with Synapse statements embedded").getOrCreate()
-sc=spark.sparkContext
 
 
 cp = configparser.ConfigParser()
-g = Github(os.environ.get('GITHUB_TOKEN'))
+#Get the github token from environment variables to access github repositoryg = Github(os.environ.get('GITHUB_TOKEN'))
 repo = g.get_user().get_repo( 'Testing' )
 files_and_dirs = [fd for fd in repo.get_dir_contents('/')]
 fileDataList=[]
@@ -33,7 +36,8 @@ while len(contents)>0:
         if file_content.name=='properties_1.ini':
             cp.readfp(StringIO(file_content.decoded_content.decode()))
 
-
+spark=SparkSession.builder.appName(cp.get('PySparkProp', 'appName')).getOrCreate()
+sc=spark.sparkContext
 database =cp.get('SQLSERVERDBConnection', 'database')
 user = cp.get('SQLSERVERDBConnection', 'user')
 password = cp.get('SQLSERVERDBConnection', 'password')
