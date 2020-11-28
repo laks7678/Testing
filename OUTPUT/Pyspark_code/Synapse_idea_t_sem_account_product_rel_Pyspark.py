@@ -45,7 +45,7 @@ server = cp.get('SQLSERVERDBConnection', 'server')
 connection = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={user};PWD={password}')
 
 
-#Creating dataframes
+#Creating dataframes for parsing the tables
 df0 = "DELETE FROM TD_BIM_FR_TRNG_DB.IDEA_T_SEM_ACCOUNT_PRODUCT_REL "
 cursor = connection.cursor()
 cursor.execute(query0)
