@@ -20,7 +20,8 @@ from pyspark.sql import functions as F
 from pyspark.sql.functions import lit, col
 from _io import StringIO
 cp = configparser.ConfigParser()
-#Get the github token from environment variables to access github repositoryg = Github(os.environ.get('GITHUB_TOKEN'))
+#Get the github token from environment variables to access github repository
+g = Github(os.environ.get('GITHUB_TOKEN'))
 repo = g.get_user().get_repo( 'Testing' )
 files_and_dirs = [fd for fd in repo.get_dir_contents('/')]
 fileDataList=[]
