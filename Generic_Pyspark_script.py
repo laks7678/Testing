@@ -20,7 +20,5 @@ from pyspark.sql import functions as F
 from pyspark.sql.functions import lit, col
 from _io import StringIO
 
-spark=SparkSession.builder.appName("Building Pyspark code with Synapse statements embedded").getOrCreate()
-sc=spark.sparkContext
 
 
