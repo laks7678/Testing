@@ -19,9 +19,6 @@ import pandas as pd
 from pyspark.sql import functions as F
 from pyspark.sql.functions import lit, col
 from _io import StringIO
-
-
-
 cp = configparser.ConfigParser()
 #Get the github token from environment variables to access github repositoryg = Github(os.environ.get('GITHUB_TOKEN'))
 repo = g.get_user().get_repo( 'Testing' )
@@ -34,8 +31,10 @@ while len(contents)>0:
         contents.extend(repo.get_contents(file_content.path))
     else :
         if file_content.name=='properties_1.ini':
-            cp.readfp(StringIO(file_content.decoded_content.decode()))
+            #Reading property file
+            cp.read_file(StringIO(file_content.decoded_content.decode()))
 
+#Creating spark session
 spark=SparkSession.builder.appName(cp.get('PySparkProp', 'appName')).getOrCreate()
 sc=spark.sparkContext
 database =cp.get('SQLSERVERDBConnection', 'database')
@@ -46,6 +45,7 @@ server = cp.get('SQLSERVERDBConnection', 'server')
 connection = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={user};PWD={password}')
 
 
+#Creating dataframes
 df0 = "DELETE FROM TD_BIM_FR_TRNG_DB.IDEA_T_SEM_ACCOUNT_PRODUCT_REL "
 cursor = connection.cursor()
 cursor.execute(query0)
