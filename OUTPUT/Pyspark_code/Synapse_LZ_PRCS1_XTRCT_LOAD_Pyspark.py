@@ -46,7 +46,8 @@ server = cp.get('SQLSERVERDBConnection', 'server')
 connection = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={user};PWD={password}')
 
 
-#Creating dataframes for parsing the tables#Creating dataframes for parsing the tables#Creating dataframes for parsing the tablesdf2 = "SELECT GETQUERYBAND()"
+#Creating dataframes for parsing the tables#Creating dataframes for parsing the tables#Creating dataframes for parsing the tables
+df2 = "SELECT GETQUERYBAND()"
 cursor = connection.cursor()
 cursor.execute(query5)
 for row in cursor:
