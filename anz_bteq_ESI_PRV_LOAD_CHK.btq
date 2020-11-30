@@ -1,0 +1,126 @@
+#===============================================================================
+# This file is called by an Informatica command task or by WLM directly
+#===============================================================================
+
+
+#===============================================================================
+# To set the enviromental variables
+#===============================================================================
+. /u01${HOST}/app/esi/${RUN_ENV}/scripts/$PARM_FILE.parm
+
+
+#=============================================================================================
+# Title     	    : 	Previous load check
+#
+# Filename    	    : 	BTEQ_ESI_PRV_LOAD_CHK.sh
+#
+# Description 	    : 	The SQL query is used to check whether previous load for a
+#                       table has been succeeded.
+# 
+# Source Tables     :	None
+#
+# Target Tables	    : 	None
+#
+# Key Columns	    : 	None
+#
+# Developer         : 	surendra reddy.
+#
+#
+# Location     	    : 	/u01${HOST}/app/esi/${RUN_ENV}/scripts
+#
+# Logic             :	Checks parameters, extension, existence of file, process status
+#			timestamp equity of files and file empty conditions
+#
+# Parameters	    : 	SUBJ_AREA_NM,WORK_FLOW_NM,TGT_LOAD_LOG
+#
+# 
+#============================================================================================
+
+
+
+#===============================================================================
+#BTEQ Script
+#===============================================================================
+
+bteq <<EOF
+
+
+--==============================================================================
+-- put BTEQ in Transaction mode
+--==============================================================================
+.SET WIDTH 100;
+.SET WIDTH 100;
+
+.SET SESSION TRANSACTION BTET;
+
+--==============================================================================
+/* Extract username and password                                              */
+--==============================================================================
+.run file /u01${HOST}/app/informatica/$LOGON_DIR/$LOGON_ID
+
+--==============================================================================
+/* Set default database derived from parameter file                           */
+--==============================================================================
+database ${DBName};
+
+--========================== Error Handling=====================================
+.IF ERRORCODE <> 0 THEN .GOTO ERRORS
+--========================== Error Handling=====================================
+
+--===========================Start Transaction==================================
+BT;
+--========================== Error Handling=====================================
+.IF ERRORCODE <> 0 THEN .GOTO ERRORS
+--========================== Error Handling=====================================
+
+
+/******************************************************************************/
+--   /* GETTING PUBLISH IND */
+-- Below Code will indicate whether the Load of the Source Table is complete.
+-- If not, it will throw an error and exit else, it will proceed without any error
+/******************************************************************************/
+
+select LOAD_LOG_KEY  from $TGT_LOAD_LOG
+where WORK_FLOW_NM='$WORK_FLOW_NM'
+and PBLSH_IND = 'N'
+and LOAD_END_DTM = (
+                     SELECT MAX (LOAD_END_DTM)
+                     FROM $TGT_LOAD_LOG
+                     WHERE SUBJ_AREA_NM = trim('$SUBJ_AREA_NM')
+                    );
+
+
+.IF ACTIVITYCOUNT <> 0 THEN .GOTO LOADFAIL
+
+
+--========================== Error Handling=====================================
+    .IF ERRORCODE <> 0 THEN .GOTO ERRORS
+--========================== Error Handling=====================================
+
+
+ET;
+--===========================End Transaction====================================
+
+    .QUIT 0
+    .LABEL ERRORS
+
+    .QUIT ERRORCODE
+
+    .LABEL LOADFAIL
+
+    .QUIT 88
+
+
+    EOF
+
+#============================================================================*/
+# show AIX return code and exit with it                                      */
+#============================================================================*/
+RETURN_CODE=$?
+echo script return code=$RETURN_CODE
+exit $RETURN_CODE
+
+
+#******************************************************************************/
+#/*  END OF BTEQ_PRV_LOAD_CHK.sh                                              */
+#******************************************************************************/
