@@ -1,0 +1,151 @@
+#===============================================================================
+# THIS FILE IS CALLED BY AN INFORMATICA COMMAND TASK OR BY WLM DIRECTLY
+#===============================================================================
+
+
+
+
+
+#===============================================================================
+# TO SET THE ENVIROMENTAL VARIABLES
+#===============================================================================
+
+
+
+
+
+#=============================================================================================
+# TITLE     	    : 	PREVIOUS LOAD CHECK
+#
+# FILENAME    	    : 	BTEQ_ESI_PRV_LOAD_CHK.SH
+#
+# DESCRIPTION 	    : 	THE SQL QUERY IS USED TO CHECK WHETHER PREVIOUS LOAD FOR A
+#                       TABLE HAS BEEN SUCCEEDED.
+# 
+# SOURCE TABLES     :	NONE
+#
+# TARGET TABLES	    : 	NONE
+#
+# KEY COLUMNS	    : 	NONE
+#
+# DEVELOPER         : 	SURENDRA REDDY.
+#
+#
+# LOCATION     	    : 	/U01${HOST}/APP/ESI/${RUN_ENV}/SCRIPTS
+#
+# LOGIC             :	CHECKS PARAMETERS, EXTENSION, EXISTENCE OF FILE, PROCESS STATUS
+#			DATETIME2 EQUITY OF FILES AND FILE EMPTY CONDITIONS
+#
+# PARAMETERS	    : 	SUBJ_AREA_NM,WORK_FLOW_NM,TGT_LOAD_LOG
+#
+# 
+#============================================================================================
+
+
+
+
+
+
+#===============================================================================
+#BTEQ SCRIPT
+#===============================================================================
+
+
+
+
+
+
+--==============================================================================
+-- PUT BTEQ IN TRANSACTION MODE
+--==============================================================================
+
+
+--==============================================================================
+/* datepart USERNAME AND PASSWORD                                              */;
+
+
+
+--==============================================================================
+
+--==============================================================================
+/* SET DEFAULT DATABASE DERIVED FROM PARAMETER FILE                           */;
+
+
+
+--==============================================================================
+DATABASE ${DBNAME};
+
+
+
+
+--========================== ERROR HANDLING=====================================
+--========================== ERROR HANDLING=====================================
+
+--===========================START TRANSACTION==================================
+BEGIN TRANSACTION;
+
+
+
+--========================== ERROR HANDLING=====================================
+--========================== ERROR HANDLING=====================================
+
+
+/******************************************************************************/
+
+
+
+--   /* GETTING PUBLISH IND */;
+
+
+
+-- BELOW CODE WILL INDICATE WHETHER THE LOAD OF THE SOURCE TABLE IS COMPLETE.
+-- IF NOT, IT WILL THROW AN ERROR AND EXIT ELSE, IT WILL PROCEED WITHOUT ANY ERROR
+/******************************************************************************/
+
+
+
+
+SELECT LOAD_LOG_KEY  FROM $TGT_LOAD_LOG
+WHERE WORK_FLOW_NM='$WORK_FLOW_NM'
+AND PBLSH_IND = 'N'
+AND LOAD_END_DTM = (
+                     SELECT MAX (LOAD_END_DTM)
+                     FROM $TGT_LOAD_LOG
+                     WHERE SUBJ_AREA_NM = TRIM('$SUBJ_AREA_NM')
+                    );
+
+
+
+
+
+
+
+--========================== ERROR HANDLING=====================================
+--========================== ERROR HANDLING=====================================
+
+
+COMMIT TRANSACTION;
+
+
+
+--===========================COMMIT TRANSACTION====================================
+
+
+
+
+
+
+
+#============================================================================*/
+# SHOW AIX RETURN CODE AND EXIT WITH IT                                      */
+#============================================================================
+
+
+*/
+RETURN_CODE=$?
+ECHO SCRIPT RETURN CODE=$RETURN_CODE
+EXIT $RETURN_CODE
+
+
+#******************************************************************************/
+#/*  END OF BTEQ_PRV_LOAD_CHK.SH                                              */;
