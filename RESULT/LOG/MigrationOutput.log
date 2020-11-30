@@ -1,18 +1,18 @@
-2020-11-30 15:42:33 :: anz_Synapse_ESI_PRV_LOAD_CHK.txt :: Simple :: SUCCESS
+2020-11-30 15:50:41 :: anz_Synapse_ESI_PRV_LOAD_CHK.txt :: Simple :: SUCCESS
 
-2020-11-30 15:42:46 :: Synapse_ESI_AUDT_STTSTC_TGT.txt :: Simple :: SUCCESS
+2020-11-30 15:50:51 :: Synapse_ESI_AUDT_STTSTC_TGT.txt :: Simple :: SUCCESS
 
-2020-11-30 15:43:52 :: Synapse_LZ_PRCS1_XTRCT_LOAD.txt :: Medium or Complex :: SUCCESS
+2020-11-30 15:51:58 :: Synapse_LZ_PRCS1_XTRCT_LOAD.txt :: Medium or Complex :: SUCCESS
 
-2020-11-30 15:44:06 :: Synapse_RDW_PCT_BLNC_load.txt :: Medium or Complex :: SUCCESS
+2020-11-30 15:52:11 :: Synapse_RDW_PCT_BLNC_load.txt :: Medium or Complex :: SUCCESS
 
-2020-11-30 15:44:14 :: Synapse_idea_t_sem_account_balance.txt :: Simple :: SUCCESS
+2020-11-30 15:52:20 :: Synapse_idea_t_sem_account_balance.txt :: Simple :: SUCCESS
 
-2020-11-30 15:44:23 :: Synapse_idea_t_sem_account_product_rel.txt :: Simple :: SUCCESS
+2020-11-30 15:52:29 :: Synapse_idea_t_sem_account_product_rel.txt :: Simple :: SUCCESS
 
-2020-11-30 15:44:35 :: Synapse_idea_t_sem_act_prd_prty_denorm.txt :: Medium or Complex :: SUCCESS
+2020-11-30 15:52:40 :: Synapse_idea_t_sem_act_prd_prty_denorm.txt :: Medium or Complex :: SUCCESS
 
-2020-11-30 15:44:46 :: Synapse_idea_t_sem_customer_dim.txt :: Simple :: SUCCESS
+2020-11-30 15:52:52 :: Synapse_idea_t_sem_customer_dim.txt :: Simple :: SUCCESS
 
-2020-11-30 15:44:56 :: Synapse_idea_t_sem_gl_balance_fact.txt :: Medium or Complex :: SUCCESS
+2020-11-30 15:53:02 :: Synapse_idea_t_sem_gl_balance_fact.txt :: Medium or Complex :: SUCCESS
 
