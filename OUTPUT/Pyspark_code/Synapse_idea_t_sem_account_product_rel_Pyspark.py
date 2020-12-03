@@ -49,6 +49,6 @@ connection = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database
 #Creating dataframes for parsing the tables
 df0 = "DELETE FROM TD_BIM_FR_TRNG_DB.IDEA_T_SEM_ACCOUNT_PRODUCT_REL "
 cursor = connection.cursor()
-cursor.execute(query0)
+cursor.execute(df0)
 connection.commit()
 
